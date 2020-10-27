@@ -150,7 +150,7 @@ def main():
     data = load('human_data.obj')
     k = 5
     shingles = shingling(data , k)
-    number_of_hash_functions=10
+    number_of_hash_functions=100
     func = hashfunc(number_of_hash_functions, len(data))
     signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), func)
     b=2
