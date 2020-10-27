@@ -4,6 +4,7 @@ import pickle
 from collections import defaultdict
 import copy 
 import sys
+from operator import itemgetter
 from random import randint 
 
 def load(doc) :
@@ -70,10 +71,11 @@ def signature_matrix(shingles, num, no_of_doc, func):
 	func is the list returned by hashfunc()
 	'''
 	shingles_list = list(shingles.keys())
-	listofinfinity = [sys.maxsize] * no_of_doc
-	signature_mat = {}
-	for x in range (0, num):
-		signature_mat[x] = copy.deepcopy(listofinfinity)
+	#listofinfinity = [sys.maxsize] * no_of_doc
+	#signature_mat = {}
+	signature_mat = np.zeros((num,no_of_doc)) + float('inf')
+	#for x in range (0, num):
+		#signature_mat[x] = copy.deepcopy(listofinfinity)
 	print("initialization of signature_mat done")
 	# Has keys as the hash function and values as list for all documents
 
@@ -87,14 +89,76 @@ def signature_matrix(shingles, num, no_of_doc, func):
 						signature_mat[n][col] = hashes[n]
 	print("Signature Matrix created")
 	return signature_mat
+	
+len_buckets = 131  #started with sqrt(N) and then doubled the number to finally choose a prime number
+def L2_norm(x,y):
+        '''This function is used to normalize a vector length using L2 norm '''
+        return sum(pow((x[i] - y[i]), 2) for i in range(len(x))) ** (1/2)
+    
+def cosine_similarity(x,y):
+    '''
+    Computes the cosine similarity between two vectors
+    '''
+    numerator=0
+    zeroes=np.zeros(len(x))
+    for i in range(len(x)):
+        numerator=numerator+(x[i]*y[i])
+    A = L2_norm(x,zeroes)
+    B = L2_norm(y,zeroes)
+    return numerator/ (A*B)
+
+def initialize_array_bucket(bands):
+    '''Initialize an empty array of buckets
+        for each band'''
+    global len_buckets
+    array_buckets = []
+    for band in range(bands):
+        array_buckets.append([[] for i in range(len_buckets)])
+    #print(len(array_buckets))
+    #print(len(array_buckets[0]))
+    return array_buckets
+
+def LSH_banding(signature_mat,t,bands,rows):
+    '''Function to divide the signature matrix into bands and bucketing 
+        2 similar documents using cosine similarity '''
+    array_buckets = initialize_array_bucket(bands)
+    similar_docs = {}
+    
+    i = 0
+    for b in range(bands):
+        buckets = array_buckets[b]        
+        band = signature_mat[i:i+rows,:]
+        for col in range(band.shape[1]):
+            key = int(sum(band[:,col]) % len(buckets))
+            buckets[key].append(col)
+        i = i+rows
+        #print(buckets)
+        for item in buckets:
+            if len(item) > 1:
+                pair = (item[0], item[1])
+                if pair not in similar_docs:
+                    A = signature_mat[:,item[0]]
+                    B = signature_mat[:,item[1]]
+                    similarity = cosine_similarity(A,B)
+                    similarity=min(similarity,1.0)
+                    if similarity >= t:
+                        similar_docs[pair] = similarity
+    sorted_list = sorted(similar_docs.items(),key=itemgetter(1), reverse=True)
+    return similar_docs,sorted_list	
 
 def main():
     data = load('human_data.obj')
     k = 5
     shingles = shingling(data , k)
-    func = hashfunc(100, len(data))
-    signature_mat = signature_matrix(shingles, 100, len(data), func)
-    
+    number_of_hash_functions=10
+    func = hashfunc(number_of_hash_functions, len(data))
+    signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), func)
+    b=2
+    rows=int(number_of_hash_functions/b)
+    candidates,sorted_list = LSH_banding(signature_mat,0.8,b,rows)
+    print("banding done")
+    #print(sorted_list)
+
     # --------------Debugging--------------------------------
     # shingles = \
     # { "0": [0,1,1,0],
