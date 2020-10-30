@@ -20,12 +20,15 @@ def shingling(data , k) :
     Keys of the dictionary are the shingles and the value is matrix values (rows)
     '''
     num_of_doc = len(data)
-    listofzeros = [0] * num_of_doc
-    shingles_dict=defaultdict(lambda : copy.deepcopy(listofzeros))
+    # .......listofzeros = [0] * num_of_doc
+    # shingles_dict=defaultdict(lambda : copy.deepcopy(listofzeros))
+    shingles_dict=defaultdict(lambda : set([]))
     for doc in range (0,num_of_doc) :
         for x in range (0,len(data[doc])-k+1) :
-            shingles_dict[data[doc][x:x+k]][doc]=1
+            # shingles_dict[data[doc][x:x+k]][doc]=1
+            shingles_dict[data[doc][x:x+k]].add(doc)
     print("Shingling done")
+    # print( shingles_dict[0])
     return shingles_dict
     # filehandler = open("shingles.obj","wb")
     # pickle.dump(dict(shingles_dict),filehandler)
@@ -81,13 +84,19 @@ def signature_matrix(shingles, num, no_of_doc, func):
     # Has keys as the hash function and values as list for all documents
 
     # row refers to row of input matrix (conceptually)
-    for row in range (0, len(shingles_list)):
+    # for row in range (0, len(shingles_list)):
+    #     hashes = genhash(len(shingles_list), num, row, func)
+    #     for col in range (0, no_of_doc):
+    #         if shingles[shingles_list[row]][col] == 1:
+    #             for n in range (0, num):
+    #                 if hashes[n] < signature_mat[n][col]:
+    #                     signature_mat[n][col] = hashes[n]
+    for row in range (0, len(shingles_list)): #keys
         hashes = genhash(len(shingles_list), num, row, func)
-        for col in range (0, no_of_doc):
-            if shingles[shingles_list[row]][col] == 1:
-                for n in range (0, num):
-                    if hashes[n] < signature_mat[n][col]:
-                        signature_mat[n][col] = hashes[n]
+        for col in shingles[shingles_list[row]] :
+            for n in range (0, num):
+                if hashes[n] < signature_mat[n][col]:
+                    signature_mat[n][col] = hashes[n]
     print("Signature Matrix created")
 
     signature_mat_list = []
@@ -138,6 +147,8 @@ def LSH(signature_mat, b, rows,num_docs):
                 buckets[i][h]=[j]
             hashed[j][i]=h
     return hashed,buckets
+
+    
 def query_processing(hashed, buckets,signature_mat,query,t):
     '''This function is used to find the similar documents for a query within the same bucket
        obtained from LSH.
@@ -170,9 +181,8 @@ def main():
     data = load('human_data.obj')
     k = 5
     num_docs_initially=len(data)
-    text=input("Enter sequence to be searched")
+    text=input("Enter sequence to be searched ")
     data[num_docs_initially]=text
-    #print(len(data))
 
     print("Time required for Shingling ")
     start_time = time.time()
@@ -193,21 +203,24 @@ def main():
     b=5
     rows=int(number_of_hash_functions/b)
     threshold=0.8
-    print("Time required for LSH ")
+    
     start_time = time.time()
     hashed, buckets=LSH(signature_mat,b,rows,len(data))
     print("Banding Done")
     val = len(data)-1
+    print("Time required for LSH ")
+    print("--- %s seconds ---" % (time.time() - start_time))
+
     sim_list=query_processing(hashed, buckets,signature_mat,val,threshold)
     print("Similar DNA Patterns")
     for item in sim_list:
         print("Pattern number " + str(item[1]) + " with cosine similarity of " +str(item[0]) ) 
         print(data[item[1]])
-    print("--- %s seconds ---" % (time.time() - start_time))
+    
     # print(sorted_list)
 
     # --------------Debugging--------------------------------
-    # shingles = \
+    # shingles = 
     # { "0": [0,1,1,0],
     #   "1": [0,0,1,1],
     #   "2": [1,0,0,0],
@@ -215,6 +228,14 @@ def main():
     #   "4": [0,0,0,1],
     #   "5": [1,1,0,0],
     #   "6": [0,0,1,0]
+    # }
+    # shingles = { "0": [1,2],
+    #   "1": [2,3],
+    #   "2": [0],
+    #   "3": [1,3],
+    #   "4": [3],
+    #   "5": [0,1],
+    #   "6": [2]
     # }
     # func = hashfunc(3, 4)
     # signature_mat = signature_matrix(shingles, 3, 4, func)
