@@ -76,7 +76,7 @@ def signature_matrix(shingles, num, no_of_doc, func):
 	signature_mat = np.zeros((num,no_of_doc)) + float('inf')
 	#for x in range (0, num):
 		#signature_mat[x] = copy.deepcopy(listofinfinity)
-	print("initialization of signature_mat done")
+	print("initialization of Signature matrix done")
 	# Has keys as the hash function and values as list for all documents
 
 	# row refers to row of input matrix (conceptually)
@@ -107,56 +107,78 @@ def cosine_similarity(x,y):
     B = L2_norm(y,zeroes)
     return numerator/ (A*B)
 
-def initialize_array_bucket(bands):
-    '''Initialize an empty array of buckets
-        for each band'''
-    global len_buckets
-    array_buckets = []
-    for band in range(bands):
-        array_buckets.append([[] for i in range(len_buckets)])
-    #print(len(array_buckets))
-    #print(len(array_buckets[0]))
-    return array_buckets
-
-def LSH_banding(signature_mat,t,bands,rows):
-    '''Function to divide the signature matrix into bands and bucketing 
-        2 similar documents using cosine similarity '''
-    array_buckets = initialize_array_bucket(bands)
-    similar_docs = {}
-    
-    i = 0
-    for b in range(bands):
-        buckets = array_buckets[b]        
-        band = signature_mat[i:i+rows,:]
-        for col in range(band.shape[1]):
-            key = int(sum(band[:,col]) % len(buckets))
-            buckets[key].append(col)
-        i = i+rows
-        #print(buckets)
-        for item in buckets:
-            if len(item) > 1:
-                pair = (item[0], item[1])
-                if pair not in similar_docs:
-                    A = signature_mat[:,item[0]]
-                    B = signature_mat[:,item[1]]
-                    similarity = cosine_similarity(A,B)
-                    similarity=min(similarity,1.0)
-                    if similarity >= t:
-                        similar_docs[pair] = similarity
-    sorted_list = sorted(similar_docs.items(),key=itemgetter(1), reverse=True)
-    return similar_docs,sorted_list	
+def LSH(signature_mat, b, rows,num_docs):
+	'''It is responsible for the local sensitive hashing. It divides the signature matrix into bands
+	   and documents having the same hashed value in a certain band are put into same bucket
+	   This function takes parameters:
+	   signature_mat : The Signature matrix obtained after minhashing
+	   b: number of bands in which signature matrix is divided
+	   rows: number of rows each band has
+	   num_docs: the number of documents in the corpus
+	   It returns two values:
+	   buckets: An array of dictionaries which holds the hashed vectors for each band
+	   hashed:It is the mapping using which docid was hashed into buckets
+	'''	
+	buckets=np.full(b,{})
+	hashed=np.zeros((num_docs,b),dtype=int)
+	for  i in range(b):
+		for j in range(num_docs):
+			l=signature_mat[int(i*rows):int((i+1)*rows), j]
+			h=hash(tuple(l))
+			if buckets[i].get(h):
+				buckets[i][h].append(j)
+			else:
+				buckets[i][h]=[j]
+			hashed[j][i]=h
+	return hashed,buckets
+def query_processing(hashed, buckets,signature_mat,query,t):
+	'''This function is used to find the similar documents for a query within the same bucket
+	   obtained from LSH.
+	   The metric for search is Cosine Similarity
+	   The various parameters are
+	   hashed:It is the mapping using which docid was hashed into buckets
+	   buckets: An array of dictionaries which holds the hashed vectors for each band
+	   signature_mat: The Signature matrix obtained after minhashing
+	   query: the query document number to be searched in the corpus
+	   t: the threhold value for diciding similarity
+	   This function returns a sorted list of documents on the basis of similarity with the query document
+	   '''
+	   
+	   
+	c=[]
+	for b,h in enumerate(hashed[query]):
+		c.extend(buckets[b][h])
+	c=set(c)
+	sim_list=[]
+	for doc in c:
+		if doc==query:
+			continue
+		A = signature_mat[:,doc]
+		B = signature_mat[:,query]
+		sim = cosine_similarity(A,B)
+		if(sim>=t):
+			sim_list.append((round(sim, 3),doc))
+	sim_list.sort(reverse=True)
+	return sim_list
 
 def main():
     data = load('human_data.obj')
     k = 5
     shingles = shingling(data , k)
-    number_of_hash_functions=10
+    number_of_hash_functions=100
     func = hashfunc(number_of_hash_functions, len(data))
     signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), func)
-    b=2
+    b=5
     rows=int(number_of_hash_functions/b)
-    candidates,sorted_list = LSH_banding(signature_mat,0.8,b,rows)
-    print("banding done")
+    threshold=0.8
+    hashed, buckets=LSH(signature_mat,b,rows,len(data))
+    print("Banding Done")
+    val = int(input("Enter the DNA sequence number to be searched: "))
+    sim_list=query_processing(hashed, buckets,signature_mat,val,threshold)
+    print("Similar DNA Patterns")
+    for item in sim_list:
+    	print("Pattern number " + str(item[1]+1) + " with cosine similarity of " +str(item[0]) ) 
+    	print(data[item[1]])
     #print(sorted_list)
 
     # --------------Debugging--------------------------------
