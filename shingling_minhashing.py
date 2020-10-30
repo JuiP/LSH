@@ -164,6 +164,10 @@ def query_processing(hashed, buckets,signature_mat,query,t):
 def main():
     data = load('human_data.obj')
     k = 5
+    num_docs_initially=len(data)
+    text=input("Enter sequence to be searched")
+    data[num_docs_initially]=text
+    #print(len(data))
     shingles = shingling(data , k)
     number_of_hash_functions=100
     func = hashfunc(number_of_hash_functions, len(data))
@@ -173,11 +177,11 @@ def main():
     threshold=0.8
     hashed, buckets=LSH(signature_mat,b,rows,len(data))
     print("Banding Done")
-    val = int(input("Enter the DNA sequence number to be searched: "))
+    val = len(data)-1
     sim_list=query_processing(hashed, buckets,signature_mat,val,threshold)
     print("Similar DNA Patterns")
     for item in sim_list:
-    	print("Pattern number " + str(item[1]+1) + " with cosine similarity of " +str(item[0]) ) 
+    	print("Pattern number " + str(item[1]) + " with cosine similarity of " +str(item[0]) ) 
     	print(data[item[1]])
     #print(sorted_list)
 
