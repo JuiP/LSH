@@ -1,0 +1,64 @@
+Help on module shingling_minhashing:
+
+NAME
+    shingling_minhashing
+
+FUNCTIONS
+    L2_norm(x, y)
+        This function is used to normalize a vector length using L2 norm
+    
+    LSH(signature_mat, b, rows, num_docs)
+        It is responsible for the local sensitive hashing. It divides the signature matrix into bands
+        and documents having the same hashed value in a certain band are put into same bucket
+        This function takes parameters:
+        signature_mat : The Signature matrix obtained after minhashing
+        b: number of bands in which signature matrix is divided
+        rows: number of rows each band has
+        num_docs: the number of documents in the corpus
+        It returns two values:
+        buckets: An array of dictionaries which holds the hashed vectors for each band
+        hashed:It is the mapping using which docid was hashed into buckets
+    
+    cosine_similarity(x, y)
+        Computes the cosine similarity between two vectors
+    
+    genhash(length, num, x, func)
+        length is the number of shingles.
+        num is the number of hash functions.
+        x is the row for which hash function value is to be calculated.
+        func is the list returned by hashfunc()
+        Returns the list containing hash functions value for row x.
+    
+    hashfunc(num, length)
+        num is the number of hash functions to be created.
+        Returns list of (a,b) pairs.
+        Hash function is of the form (ax+b)modlength
+        Here a and b is always smaller than the number of shingles.
+    
+    load(doc)
+        Load the pickle file
+    
+    main()
+    
+    query_processing(hashed, buckets, signature_mat, query, t)
+        This function is used to find the similar documents for a query within the same bucket
+        obtained from LSH.
+        The metric for search is Cosine Similarity
+        The various parameters are
+        hashed:It is the mapping using which docid was hashed into buckets
+        buckets: An array of dictionaries which holds the hashed vectors for each band
+        signature_mat: The Signature matrix obtained after minhashing
+        query: the query document number to be searched in the corpus
+        t: the threhold value for diciding similarity
+        This function returns a sorted list of documents on the basis of similarity with the query document
+    
+    shingling(data, k)
+        shingles_dict stores the input matrix.
+        Keys of the dictionary are the shingles and the value is matrix values (rows)
+    
+    signature_matrix(shingles, num, no_of_doc, func)
+        shingles is the Input matrix with value of dictionary as the shingles.
+        num is the number of minhash functions to be generated.
+        no_of_doc is the number of documents in data.
+        func is the list returned by hashfunc()
+

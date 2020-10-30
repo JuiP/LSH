@@ -9,6 +9,9 @@ from random import randint
 import time
 
 def load(doc) :
+    '''
+    Load the pickle file
+    '''
     file = open(doc,'rb')
     data = pickle.load(file)
     file.close()
