@@ -5,7 +5,7 @@ from collections import defaultdict
 import copy 
 import sys
 from operator import itemgetter
-from random import randint 
+from random import randint, shuffle
 import time
 
 def load(doc) :
@@ -30,10 +30,17 @@ def shingling(data , k) :
     print("Shingling done")
     # print( shingles_dict[0])
     return shingles_dict
-    # filehandler = open("shingles.obj","wb")
-    # pickle.dump(dict(shingles_dict),filehandler)
-    # filehandler.close()
-    # return shingles_dict
+
+
+def hashed_func(num, length):
+	to_be_returned = []
+	for i in range (0, num):
+		doc_list = list(range(0,length))
+		shuffle(doc_list)
+		to_be_returned += [doc_list]
+	return(np.array(to_be_returned).T)
+	
+
 
 def hashfunc(num, length):
     '''
@@ -67,7 +74,7 @@ def genhash(length, num, x, func):
     return hashes
 
 
-def signature_matrix(shingles, num, no_of_doc, func):
+def signature_matrix(shingles, num, no_of_doc, hashed_array):
     '''
     shingles is the Input matrix with value of dictionary as the shingles.
     num is the number of minhash functions to be generated.
@@ -83,16 +90,8 @@ def signature_matrix(shingles, num, no_of_doc, func):
     print("initialization of Signature matrix done")
     # Has keys as the hash function and values as list for all documents
 
-    # row refers to row of input matrix (conceptually)
-    # for row in range (0, len(shingles_list)):
-    #     hashes = genhash(len(shingles_list), num, row, func)
-    #     for col in range (0, no_of_doc):
-    #         if shingles[shingles_list[row]][col] == 1:
-    #             for n in range (0, num):
-    #                 if hashes[n] < signature_mat[n][col]:
-    #                     signature_mat[n][col] = hashes[n]
     for row in range (0, len(shingles_list)): #keys
-        hashes = genhash(len(shingles_list), num, row, func)
+        #hashes = list(hashed_array[row])
         for col in shingles[shingles_list[row]] :
             for n in range (0, num):
                 if hashes[n] < signature_mat[n][col]:
@@ -192,17 +191,17 @@ def main():
     print("Time required for Hashing ")
     start_time = time.time()
     number_of_hash_functions=100
-    func = hashfunc(number_of_hash_functions, len(data))
+    hashed_array = hashed_func(number_of_hash_functions, len(data))
     print("--- %s seconds ---" % (time.time() - start_time))
 
     print("Time required for Signature Matrix ")
     start_time = time.time()
-    signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), func)
+    signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), hashed_array)
     print("--- %s seconds ---" % (time.time() - start_time))
 
     b=5
     rows=int(number_of_hash_functions/b)
-    threshold=0.8
+    threshold=0.95
     
     start_time = time.time()
     hashed, buckets=LSH(signature_mat,b,rows,len(data))
@@ -218,7 +217,7 @@ def main():
     print("Similar DNA Patterns")
     for item in sim_list:
         print("Pattern number " + str(item[1]) + " with cosine similarity of " +str(item[0]) ) 
-        print(data[item[1]])
+        #print(data[item[1]])
     
     
     # print(sorted_list)
@@ -253,3 +252,4 @@ def main():
 
 #uncomment to run
 main()
+#hashed(5, 6)
