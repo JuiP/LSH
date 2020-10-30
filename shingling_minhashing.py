@@ -106,7 +106,7 @@ def signature_matrix(shingles, num, no_of_doc, func):
     # print(signature_mat_list)
     return signature_mat_list
     
-len_buckets = 131  #started with sqrt(N) and then doubled the number to finally choose a prime number
+
 def L2_norm(x,y):
         '''This function is used to normalize a vector length using L2 norm '''
         return sum(pow((x[i] - y[i]), 2) for i in range(len(x))) ** (1/2)
@@ -202,7 +202,7 @@ def main():
 
     b=5
     rows=int(number_of_hash_functions/b)
-    threshold=0.8
+    threshold=0.9
     
     start_time = time.time()
     hashed, buckets=LSH(signature_mat,b,rows,len(data))
