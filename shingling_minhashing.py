@@ -211,11 +211,15 @@ def main():
     print("Time required for LSH ")
     print("--- %s seconds ---" % (time.time() - start_time))
 
+    start_time = time.time()
+    print("Time required for query time ")
     sim_list=query_processing(hashed, buckets,signature_mat,val,threshold)
+    print("--- %s seconds ---" % (time.time() - start_time))
     print("Similar DNA Patterns")
     for item in sim_list:
         print("Pattern number " + str(item[1]) + " with cosine similarity of " +str(item[0]) ) 
         print(data[item[1]])
+    
     
     # print(sorted_list)
 
