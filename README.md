@@ -10,7 +10,7 @@ We have to implement Local Sensitive Hashing to find out duplicate or similar DN
 
 Dataset used - [Kaggle-human-data](https://www.kaggle.com/thomasnelson/human-data)
 
-Have a look at the file [Design Architecture](https://github.com/KritiJethlia/LSH/blob/main/Design%20Document%20Assignment%202%20(1).pdf). It includes the concepts used along with the time taken for each implementation step.
+Have a look at the file [Design Architecture](https://github.com/KritiJethlia/LSH/blob/main/Design_Document_Assignment_2.pdf). It includes the concepts used along with the time taken for each implementation step.
 
 Project By:
 - **Kriti Jethlia**: Email- <f20180223@hyderabad.bits-pilani.ac.in>
@@ -24,7 +24,7 @@ Project By:
 2. cd LSH
 3. Run file: 
 
-              python3 shingling_minhashing.py
+              python3 LSH_program.py
   
 4. Type your query in the terminal and wait till it returns the similar DNA sequence results :)
 
