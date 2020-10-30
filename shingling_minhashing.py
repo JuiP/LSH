@@ -6,6 +6,7 @@ import copy
 import sys
 from operator import itemgetter
 from random import randint 
+import time
 
 def load(doc) :
     file = open(doc,'rb')
@@ -18,6 +19,8 @@ def shingling(data , k) :
     shingles_dict stores the input matrix.
     Keys of the dictionary are the shingles and the value is matrix values (rows)
     '''
+    
+    start_time=time.time()
     num_of_doc = len(data)
     listofzeros = [0] * num_of_doc
     shingles_dict=defaultdict(lambda : copy.deepcopy(listofzeros))
@@ -25,6 +28,8 @@ def shingling(data , k) :
         for x in range (0,len(data[doc])-k+1) :
             shingles_dict[data[doc][x:x+k]][doc]=1
     print("Shingling done")
+    print("Time taken for shingling")
+    print("--- %s seconds ---" % (time.time() - start_time))
     return shingles_dict
     # filehandler = open("shingles.obj","wb")
     # pickle.dump(dict(shingles_dict),filehandler)
@@ -70,13 +75,17 @@ def signature_matrix(shingles, num, no_of_doc, func):
 	no_of_doc is the number of documents in data.
 	func is the list returned by hashfunc()
 	'''
+	
+	start_time=time.time()
+	#signature_mat = np.zeros((num,no_of_doc)) + float('inf')
 	shingles_list = list(shingles.keys())
-	#listofinfinity = [sys.maxsize] * no_of_doc
-	#signature_mat = {}
-	signature_mat = np.zeros((num,no_of_doc)) + float('inf')
-	#for x in range (0, num):
-		#signature_mat[x] = copy.deepcopy(listofinfinity)
+	listofinfinity = [sys.maxsize] * no_of_doc
+	signature_mat = {}
+	
+	for x in range (0, num):
+		signature_mat[x] = copy.deepcopy(listofinfinity)
 	print("initialization of Signature matrix done")
+	
 	# Has keys as the hash function and values as list for all documents
 
 	# row refers to row of input matrix (conceptually)
@@ -88,6 +97,8 @@ def signature_matrix(shingles, num, no_of_doc, func):
 					if hashes[n] < signature_mat[n][col]:
 						signature_mat[n][col] = hashes[n]
 	print("Signature Matrix created")
+	print("Time taken for minhashing")
+	print("--- %s seconds ---" % (time.time() - start_time))
 	return signature_mat
 	
 len_buckets = 131  #started with sqrt(N) and then doubled the number to finally choose a prime number
@@ -123,7 +134,7 @@ def LSH(signature_mat, b, rows,num_docs):
 	hashed=np.zeros((num_docs,b),dtype=int)
 	for  i in range(b):
 		for j in range(num_docs):
-			l=signature_mat[int(i*rows):int((i+1)*rows), j]
+			l=signature_mat.iloc[int(i*rows):int((i+1)*rows), j]
 			h=hash(tuple(l))
 			if buckets[i].get(h):
 				buckets[i][h].append(j)
@@ -153,8 +164,8 @@ def query_processing(hashed, buckets,signature_mat,query,t):
 	for doc in c:
 		if doc==query:
 			continue
-		A = signature_mat[:,doc]
-		B = signature_mat[:,query]
+		A = signature_mat.iloc[:,doc]
+		B = signature_mat.iloc[:,query]
 		sim = cosine_similarity(A,B)
 		if(sim>=t):
 			sim_list.append((round(sim, 3),doc))
@@ -165,24 +176,28 @@ def main():
     data = load('human_data.obj')
     k = 5
     num_docs_initially=len(data)
-    text=input("Enter sequence to be searched")
+    text=input("Enter sequence to be searched: ")
     data[num_docs_initially]=text
     #print(len(data))
     shingles = shingling(data , k)
     number_of_hash_functions=100
     func = hashfunc(number_of_hash_functions, len(data))
     signature_mat = signature_matrix(shingles, number_of_hash_functions , len(data), func)
+    df=pd.DataFrame.from_dict(signature_mat,orient='index')
     b=5
     rows=int(number_of_hash_functions/b)
     threshold=0.8
-    hashed, buckets=LSH(signature_mat,b,rows,len(data))
+    start_time=time.time()
+    hashed, buckets=LSH(df,b,rows,len(data))
     print("Banding Done")
     val = len(data)-1
-    sim_list=query_processing(hashed, buckets,signature_mat,val,threshold)
+    sim_list=query_processing(hashed, buckets,df,val,threshold)
     print("Similar DNA Patterns")
     for item in sim_list:
     	print("Pattern number " + str(item[1]) + " with cosine similarity of " +str(item[0]) ) 
     	print(data[item[1]])
+    print("Time taken for querying")
+    print("--- %s seconds ---" % (time.time() - start_time))
     #print(sorted_list)
 
     # --------------Debugging--------------------------------
